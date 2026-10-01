@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Converge — Gerenciador de Quadros e Planos de Ação</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><div class="logo-mark">C</div><span>CONVERGE</span></div>
+    <div class="nav-title">Navegação</div>
+    <nav class="nav">
+      <button class="active" id="btnMainBoard" onclick="showMainBoard()">▦ <span>Quadros de Ação</span></button>
+      <button id="btnMyActions" onclick="showMyActions()">✓ <span>Minhas ações</span></button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Quadros por Área</h1>
+      </div>
+    </div>
+
+    <div class="area-selector-container" id="areaSelectorContainer">
+      <div class="area-pills" id="areaPills"></div>
+    </div>
+
+    <div class="toolbar" id="toolbar">
+      <div class="search">
+        <input id="search" placeholder="Buscar por ação, título ou responsável..." oninput="render()">
+      </div>
+      <button class="primary" onclick="openForm()">＋ Novo Card</button>
+    </div>
+
+    <section class="board" id="board"></section>
+  </main>
+</div>
+
+<div class="settings-modal" id="settingsModal">
+  <div class="settings-head">
+    <div>
+      <span class="eyebrow">Quadro de configuração</span>
+      <h3>Etiquetas personalizadas</h3>
+    </div>
+    <button class="ghost" onclick="closeSettings()" aria-label="Fechar configuração">×</button>
+  </div>
+  <p class="settings-help">Crie etiquetas para organizar as ações além do padrão.</p>
+  <div class="tag-create-row">
+    <input id="newTagName" maxlength="24" placeholder="Ex.: Em validação" onkeydown="if(event.key === 'Enter') addCustomTag()">
+    <input id="newTagColor" type="color" value="#0ea5e9" aria-label="Cor da etiqueta">
+    <button class="primary" onclick="addCustomTag()">Adicionar</button>
+  </div>
+  <div class="custom-tags-list" id="customTagsList"></div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+<div class="modal" id="actionModal">
+  <h3>Configurar Prazo da Ação</h3>
+  <div class="field"><label>Ação *</label><input id="modalActionText" placeholder="Descreva a ação"></div>
+  <div class="grid2">
+    <div class="field"><label>Data Início</label><input type="date" id="modalStartDate" readonly></div>
+    <div class="field"><label>Prazo (dias) *</label><input type="number" id="modalDays" min="1" value="5" oninput="calculateModalDueDate()"></div>
+  </div>
+  <div class="grid2">
+    <div class="field"><label>Data Prevista Conclusão</label><input type="date" id="modalDueDate" readonly></div>
+    <div class="field">
+      <label>Responsável pela Ação *</label>
+      <div class="mention-input-wrap">
+        <input id="modalResponsible" placeholder="Digite @ para mencionar" oninput="handleResponsibleMentionInput()" onkeydown="handleResponsibleMentionKeydown(event)">
+        <div id="responsibleMentionSuggestions" class="mention-suggestions" role="listbox" aria-label="Pessoas responsáveis pela ação"></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+    <button class="ghost" onclick="closeActionModal()">Cancelar</button>
+    <button class="primary" onclick="saveActionFromModal()">Confirmar Ação</button>
+  </div>
+</div>
+
+<div class="modal" id="transferModal">
+  <div class="action-detail-head">
+    <div>
+      <span class="eyebrow">Transferência</span>
+      <h3>Enviar card para outra área</h3>
+    </div>
+    <button class="ghost" onclick="closeTransferModal()" aria-label="Fechar transferência">×</button>
+  </div>
+  <p class="location-help">O card deixa a área atual e passa a usar a cor da nova área.</p>
+  <select id="transferAreaSelect" class="location-search-input"></select>
+  <button class="primary" style="width:100%;" onclick="confirmTransferCard()">Confirmar transferência</button>
+</div>
+
+<div class="modal" id="shareModal">
+  <div class="action-detail-head">
+    <div>
+      <span class="eyebrow">Compartilhamento</span>
+      <h3>Compartilhar card</h3>
+    </div>
+    <button class="ghost" onclick="closeShareModal()" aria-label="Fechar compartilhamento">×</button>
+  </div>
+  <p class="location-help">Selecione a área com a qual deseja compartilhar o card.</p>
+  <select id="shareAreaSelect" class="location-search-input"></select>
+  <button class="primary" style="width:100%;" onclick="confirmShareCard()">Confirmar compartilhamento</button>
+</div>
+
+<div class="card-detail-modal" id="cardDetailModal">
+  <div class="detail-header" id="detailHeader">
+    <div class="detail-header-status" id="detailHeaderStatus">A FAZER</div>
+    <div class="detail-header-actions">
+      <span onclick="editCurrentCardFromModal()" title="Editar Card">✏️</span>
+      <span onclick="openSettings()" title="Configuração">⚙️</span>
+      <span onclick="closeCardDetailModal()" title="Fechar">✕</span>
+    </div>
+  </div>
+  <div class="detail-body">
+    <div class="detail-left">
+      <h2 id="detailTitle">Título do Card</h2>
+
+      <div id="detailTagsContainer" class="badges" style="margin-bottom: 12px;"></div>
+      <div id="detailMeta" class="card-detail-meta"></div>
+
+      <div class="quick-btns">
+        <button type="button" id="tagsTrigger" class="quick-btn" onclick="event.stopPropagation(); openPopover('popoverTags')">🏷️ Etiquetas</button>
+        <button type="button" class="quick-btn" onclick="openShareCard()">↗ Compartilhar</button>
+        <button type="button" class="quick-btn" onclick="openTransferCard()">⇄ Transferir</button>
+        
+        <div class="popover" id="popoverTags">
+          <div class="popover-title">Selecionar Etiquetas</div>
+          <div id="tagOptions"></div>
+        </div>
+
+      </div>
+
+      <div class="detail-section-title">
+        <span>≡ Descrição</span>
+        <span class="inline-save-hint">Salva automaticamente</span>
+      </div>
+      <textarea class="detail-desc-box detail-desc-editor" id="detailDesc" placeholder="Escreva uma descrição..." oninput="updateDetailDescription()" onblur="refreshAfterDescriptionEdit()"></textarea>
+
+      <div class="detail-section-title">
+        <span>☑ Plano de Ação</span>
+      </div>
+      <div class="detail-action-progress" id="detailActionProgress">
+        <div class="progress-label">
+          <span>Progresso do Plano de Ação</span>
+          <strong id="detailActionProgressValue" class="progress-percentage">0%</strong>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill bg-red" id="detailActionProgressFill" style="width: 0%"></div>
+        </div>
+      </div>
+      <div id="detailActionsList" style="margin-bottom: 24px;"></div>
+      <div class="detail-action-create">
+        <button class="primary" onclick="startDetailAction()">＋ Criar ação</button>
+      </div>
+      <div class="detail-section-title history-toggle" id="historyToggle" tabindex="0" role="button" aria-expanded="false" onclick="toggleHistoryExpanded()" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleHistoryExpanded(); }">
+        <span>↺ Histórico de movimentação</span>
+        <span class="history-chevron" aria-hidden="true">▾</span>
+      </div>
+      <div id="detailHistoryList" class="history-list collapsed"></div>
+    </div>
+
+    <div class="detail-right">
+      <div class="detail-section-title" style="margin-bottom: 16px;">
+        <span>💬 Comentários e atividade</span>
+      </div>
+
+      <div class="comment-input-box">
+        <div class="comment-toolbar">
+          <span onmousedown="event.preventDefault()" onclick="formatComment('Tt')"><b>Tt</b></span>
+          <span onmousedown="event.preventDefault()" onclick="formatComment('B')"><b>B</b></span>
+          <span onmousedown="event.preventDefault()" onclick="formatComment('I')"><i>I</i></span>
+          <span onmousedown="event.preventDefault()" onclick="formatComment('Quote')">❞</span>
+          <span onclick="triggerCommentFileUpload()">📎</span>
+        </div>
+        <input type="file" id="commentFileInput" style="display:none;" onchange="handleCommentFileUpload(event)">
+        <div class="mention-editor-wrap">
+          <div id="newCommentText" class="rich-comment-editor" contenteditable="true" data-placeholder="Escreva um comentário..." oninput="handleMentionInput(event)" onkeydown="handleMentionKeydown(event)"></div>
+          <div id="mentionSuggestions" class="mention-suggestions" role="listbox" aria-label="Pessoas para mencionar"></div>
+        </div>
+      </div>
+      <button class="primary" style="margin-bottom: 20px;" onclick="addComment()">Salvar</button>
+
+      <div class="comment-list" id="detailCommentsList"></div>
+    </div>
+  </div>
+</div>
+
+<aside class="drawer" id="cardDrawer">
+  <div class="drawer-head">
+    <h3 id="drawerTitle">Novo Card</h3>
+    <button class="ghost" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="form">
+    <input type="hidden" id="cardId">
+
+    <div class="field"><label>Título do Card *</label><input id="fTitle" placeholder="Informe o título principal do card"></div>
+    <div class="field"><label>Descrição</label><textarea id="fDesc" placeholder="Detalhes, contextualização ou observações..."></textarea></div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Área do Quadro *</label>
+        <select id="fArea"></select>
+      </div>
+      <div class="field">
+        <label>Subárea</label>
+        <input id="fSubarea" list="subareaOptions" maxlength="40" placeholder="Selecione ou defina a subárea">
+        <datalist id="subareaOptions"></datalist>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Quem criou *</label>
+        <input id="fCreator" maxlength="60" placeholder="Nome de quem poderá concluir">
+      </div>
+      <div class="field">
+        <label>Urgência *</label>
+        <select id="fUrgencia">
+          <option value="Não">Não</option>
+          <option value="Sim">Sim</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Visibilidade *</label>
+        <select id="fVisibility" onchange="toggleUsersSelection()">
+          <option value="area">Equipe inteira</option>
+          <option value="selected">Pessoas específicas</option>
+        </select>
+      </div>
+      <div class="field" id="usersField" style="display:none;">
+        <label>Compartilhar com pessoas</label>
+        <div class="mention-input-wrap">
+          <input id="fSelectedUsers" placeholder="Ex.: @Ana, @Bruno" oninput="handleSelectedUsersMentionInput()" onkeydown="handleSelectedUsersMentionKeydown(event)">
+          <div id="selectedUsersMentionSuggestions" class="mention-suggestions" role="listbox" aria-label="Pessoas para compartilhar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; border-top:1px solid var(--line); padding-top:16px;">
+      <button type="button" class="ghost" id="btnSuspend" style="color:#dc2626; border-color:#fecaca; display:none;" onclick="suspendCurrentCard()">Suspender por tempo indeterminado</button>
+      <button type="button" class="primary" onclick="saveCard()">Salvar Card</button>
+    </div>
+  </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script src="script.js?v=2"></script>
+</body>
+</html>
