@@ -1,4 +1,5 @@
-const AREAS = ["Assistencial", "Administrativo", "Diretoria", "Ocupacional", "Qualidade", "Dados", "Geral"];
+const AREAS = ["Assistencial", "Administrativo", "Diretoria", "Ocupacional", "Qualidade", "Dados"];
+const FALLBACK_AREA = AREAS[0];
 
 const AREA_COLORS = {
   "Assistencial": { color: "#ec4899", bg: "#fce7f3" },
@@ -6,9 +7,15 @@ const AREA_COLORS = {
   "Diretoria":    { color: "#8b5cf6", bg: "#ede9fe" },
   "Ocupacional":  { color: "#10b981", bg: "#d1fae5" },
   "Qualidade":    { color: "#06b6d4", bg: "#cffafe" },
-  "Dados":        { color: "#6366f1", bg: "#e0e7ff" },
-  "Geral":         { color: "#64748b", bg: "#e2e8f0" }
+  "Dados":        { color: "#6366f1", bg: "#e0e7ff" }
 };
+
+function normalizeArea(area) {
+  const raw = String(area || '').trim();
+  if (!raw) return FALLBACK_AREA;
+  if (raw === 'Geral') return FALLBACK_AREA;
+  return AREAS.includes(raw) ? raw : FALLBACK_AREA;
+}
 
 let TAG_COLORS = {
   'Crítico': '#ef4444',
@@ -376,6 +383,8 @@ function cardHTML(c, isArchived = false) {
     .map(area => area.trim())
     .filter(Boolean);
 
+  const cardArea = normalizeArea(c.area);
+
   return `
     <div 
       class="card" 
@@ -393,7 +402,7 @@ function cardHTML(c, isArchived = false) {
       <div class="card-desc">${esc(c.desc || 'Sem descrição')}</div>
 
       <div class="badges">
-        <span class="badge-area">${esc(c.area || 'Geral')}</span>
+        <span class="badge-area">${esc(cardArea)}</span>
         <span class="badge ${isUrgent ? 'urgente-sim' : 'urgente-nao'}">Urgência: ${c.urgencia || 'Não'}</span>
         ${c.risco ? `<span class="badge gray">Risco: ${esc(c.risco)}</span>` : ''}
         ${c.esforco ? `<span class="badge gray">Esforço: ${esc(c.esforco)}</span>` : ''}
@@ -1706,16 +1715,16 @@ function addHistory(card, text, author = CURRENT_USER, date = formatDateTime(new
 function getCardOriginArea(card) {
   const latestAreaMove = [...(card.history || [])].reverse().find(item => /^Transferido de .+ para .+/.test(item.text || ''));
   const movedArea = latestAreaMove?.text.match(/ para (.+)$/)?.[1]?.trim();
-  if (movedArea && AREA_COLORS[movedArea]) return movedArea;
-  if (card.colorArea && AREA_COLORS[card.colorArea]) return card.colorArea;
-  if (card.createdArea && AREA_COLORS[card.createdArea]) return card.createdArea;
+  if (movedArea && AREA_COLORS[movedArea]) return normalizeArea(movedArea);
+  if (card.colorArea && AREA_COLORS[card.colorArea]) return normalizeArea(card.colorArea);
+  if (card.createdArea && AREA_COLORS[card.createdArea]) return normalizeArea(card.createdArea);
   const creationEvent = (card.history || []).find(item => item.text?.startsWith('Card criado na área '));
   const historyArea = creationEvent?.text?.replace('Card criado na área ', '').trim();
-  return AREA_COLORS[historyArea] ? historyArea : card.area;
+  return AREA_COLORS[historyArea] ? normalizeArea(historyArea) : normalizeArea(card.area);
 }
 
 function getAreaTheme(area) {
-  const normalizedArea = String(area || '').trim();
+  const normalizedArea = normalizeArea(area);
   return AREA_COLORS[normalizedArea] || { color: '#2563eb', bg: '#eff6ff' };
 }
 
