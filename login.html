@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComGestor - Login</title>
+
+  <link rel="stylesheet" href="login.css">
+
+  <!-- Clerk UI -->
+  <script
+    defer
+    crossorigin="anonymous"
+    src="https://able-lamb-1561.clerk.accounts.dev/npm/@clerk/ui@1/dist/ui.browser.js"
+    type="text/javascript">
+  </script>
+
+  <!-- Clerk JS -->
+  <script
+    defer
+    crossorigin="anonymous"
+    data-clerk-publishable-key="pk_test_YWJsZS1sYW1iLTE1NjEuY2xlcmsuYWNjb3VudHMuZGV2JA"
+    src="https://able-lamb-1561.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js"
+    type="text/javascript">
+  </script>
+
+  <!-- Nosso login -->
+  <script src="login.js" defer></script>
+</head>
+
+<body>
+
+  <div class="login-page">
+
+    <div class="login-container">
+
+      <section class="login-brand" aria-label="ComGestor">
+        <div class="logo">C</div>
+
+        <h1>ComGestor</h1>
+
+        <p>
+          Gestão inteligente de processos
+        </p>
+        <div class="brand-caption">
+          Organize prioridades, acompanhe ações e mantenha sua equipe alinhada.
+        </div>
+      </section>
+
+      <main class="login-card">
+        <h2>Entrar</h2>
+
+        <p class="login-subtitle">
+          Acesse com sua conta corporativa.
+        </p>
+
+        <div id="clerk-login"></div>
+
+        <div id="login-error" class="login-error" role="alert" aria-live="polite"></div>
+
+        <div id="login-loading" class="login-loading" role="status" aria-live="polite">
+          Verificando acesso...
+        </div>
+
+      </main>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

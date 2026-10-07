@@ -1911,6 +1911,32 @@ function toast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+async function logoutFromApp(button) {
+  button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
+
+  try {
+    if (!window.Clerk || typeof window.Clerk.load !== 'function' || typeof window.Clerk.signOut !== 'function') {
+      throw new Error('Clerk não está disponível para encerrar a sessão.');
+    }
+
+    await window.Clerk.load({
+      ui: {
+        ClerkUI: window.__internal_ClerkUICtor
+      }
+    });
+    await window.Clerk.signOut();
+    sessionStorage.removeItem('comgestor_auth');
+    sessionStorage.removeItem('comgestor_token');
+    window.location.replace('./login.html');
+  } catch (error) {
+    console.error('Não foi possível encerrar a sessão.', error);
+    toast('Não foi possível sair. Verifique sua conexão e tente novamente.');
+    button.disabled = false;
+    button.removeAttribute('aria-busy');
+  }
+}
+
 function esc(s) {
   return String(s || '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]));
 }

@@ -100,6 +100,10 @@ button { cursor: pointer; }
     font-weight: 800;
    }
 
+.logout-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
+.logout-button:hover { border-color: #fecaca; background: #fff7f7; color: #b91c1c; }
+.logout-button:disabled { cursor: wait; opacity: .65; }
+
 .area-selector-container { margin-bottom: 20px; }
 .area-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
 .area-pill { 
