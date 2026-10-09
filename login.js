@@ -211,9 +211,8 @@ async function verificarUsuario() {
     /*
       Entra no ComGestor.
     */
-    window.location.href =
-      "index.html";
-
+  
+window.location.href = "/ComGestor/index.html";
   } catch (error) {
 
     console.error(
