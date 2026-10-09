@@ -168,10 +168,8 @@ async function verificarUsuario() {
       "6. Obtendo token do Clerk..."
     );
 
-    const token =
-      await window.Clerk.session.getToken({
-        template: "convex"
-      });
+   const token =
+  await window.Clerk.session.getToken();
 
     if (!token) {
 
